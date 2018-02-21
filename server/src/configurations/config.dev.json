@@ -1,0 +1,25 @@
+{
+    "database": {
+        "connectionString": "mongodb://localhost:27017/cargo"
+    },
+    "server": {
+        "port": 5000,
+        "jwt": {
+          "secret": "--your secret--",
+          "expiration": "30 days",
+          "algorithm": "HS256",
+          "issuer": "Cargo network",
+          "audience": "www.cargo-network.com"
+        },
+        "routePrefix": "/api/v1",
+        "plugins": [
+            "logger",
+            "jwt-auth",
+            "swagger"
+        ]
+    },
+    "hyperledger": {
+      "adminBusinessNetworkCardName" : "admin@cargo-network",
+      "adminBusinessNetworkCardArchiveFilePath" : "/tmp/composer/networkadmin.card"
+    }
+}

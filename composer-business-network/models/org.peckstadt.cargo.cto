@@ -1,0 +1,48 @@
+/**
+ * Cargo network model
+ */
+
+namespace org.peckstadt.cargo
+
+enum CargoType {
+o CONTAINER_CARGO
+o LIQUID_BULK
+o DRY_BULK
+o BREAKBULK
+o RO_RO
+}
+
+asset Cargo identified by id {
+  o String id
+  o String name
+  o CargoType type
+}
+
+participant Driver identified by id {
+  o String id
+  o String email
+  o String firstName
+  o String lastName
+  o Address address
+}
+
+asset Truck identified by id {
+  o String id
+  o String code
+  --> Driver driver optional
+  --> Cargo[] cargo optional
+}
+
+concept Address {
+ o String country
+ o String city
+}
+
+event ChangeNotification {
+  --> Truck truck
+}
+
+transaction ChangeTruckDriver {
+  --> Truck truck
+  --> Driver driver
+}

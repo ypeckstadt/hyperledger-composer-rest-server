@@ -1,0 +1,75 @@
+import { BusinessNetworkConnection } from 'composer-client';
+import { ComposerModelFactory } from './composer-model-factory';
+import { ComposerModel, ComposerTypes } from './composer-model';
+
+export class ComposerConnection {
+
+  /**
+   * Constructor
+   * @param {BusinessNetworkConnection} bizNetworkConnection
+   * @param businessNetworkDefinition
+   * @param {ComposerModelFactory} composerModelFactory
+   */
+  constructor(
+    public bizNetworkConnection: BusinessNetworkConnection,
+    public businessNetworkDefinition: any,
+    public composerModelFactory: ComposerModelFactory
+    ) {
+  }
+
+  /**
+   * Convert hyperledger composer ledger data to a usable json object
+   * @param object
+   * @returns {any}
+   */
+  serializeToJSON(object: any): any {
+    return this.businessNetworkDefinition.getSerializer().toJSON(object);
+  }
+
+  /**
+   * Convert JSON string to hyperledger composer ledger data
+   * @param object
+   * @param object
+   * @returns {any}
+   */
+  serializeFromJSONObject(jsonObject: any): any {
+    return this.businessNetworkDefinition.getSerializer().fromJSON(jsonObject);
+  }
+
+  /**
+   * Get asset or participant registry based on composer type
+   * @param {ComposerTypes} composerType
+   * @returns {any}
+   */
+  getRegistry(composerType: ComposerTypes) {
+    switch (composerType) {
+      case ComposerTypes.Driver:
+        return this.bizNetworkConnection.getParticipantRegistry(`${ComposerModel.NAMESPACE}.${ComposerModel.PARTICIPANT.DRIVER}`);
+      case ComposerTypes.Truck:
+        return this.bizNetworkConnection.getAssetRegistry(`${ComposerModel.NAMESPACE}.${ComposerModel.ASSET.TRUCK}`);
+      case ComposerTypes.Cargo:
+        return this.bizNetworkConnection.getAssetRegistry(`${ComposerModel.NAMESPACE}.${ComposerModel.ASSET.CARGO}`);
+      default:
+        throw new Error(`composer connection getRegistery has not been defined yet`);
+    }
+  }
+
+  /**
+   * Execute a Hyperledger Composer query
+   * @param {string} name
+   * @param params
+   * @returns {any}
+   */
+  query(name: string, params: any = {}) {
+    return this.bizNetworkConnection.query(name, params);
+  }
+
+  /**
+   * Execute a Hyperledger Composer Transaction
+   * @param {string} resource
+   * @returns {any}
+   */
+  submitTransaction(resource: string) {
+    return this.bizNetworkConnection.submitTransaction(resource);
+  }
+}

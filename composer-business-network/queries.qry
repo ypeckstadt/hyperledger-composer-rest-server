@@ -1,0 +1,12 @@
+query selectAllTrucksForDriver {
+  description: "Select all trucks that are currently used by the driver"
+  statement:
+      SELECT org.peckstadt.cargo.Truck
+          WHERE (driver == _$driver)
+}
+
+query selectAllDrivers {
+  description: "Select all drivers"
+  statement:
+      SELECT org.peckstadt.cargo.Driver
+}

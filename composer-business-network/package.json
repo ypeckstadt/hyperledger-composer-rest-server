@@ -1,0 +1,22 @@
+{
+  "name": "cargo-network",
+  "version": "0.0.1",
+  "description": "Cargo demo network",
+  "scripts": {
+    "test": "mocha --recursive"
+  },
+  "author": "Yves Peckstadt",
+  "email": "peckstadt.yves@gmail.com",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "composer-admin": "next",
+    "composer-client": "next",
+    "composer-common": "next",
+    "composer-connector-embedded": "next",
+    "chai": "latest",
+    "eslint": "latest",
+    "istanbul": "latest",
+    "mkdirp": "latest",
+    "mocha": "latest"
+  }
+}

@@ -1,0 +1,7 @@
+version: '2'
+services:
+  mongodb:
+    image: mongo:latest
+    command: ["mongod", "--setParameter", "failIndexKeyTooLong=false"]
+    ports:
+      - "27017:27017"
