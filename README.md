@@ -119,3 +119,7 @@ The following routes are available:
 
 
 All routes, except passport/token, require a JWT header `Authorization Bearer <token>`
+
+#### Todo
+- connection.disconnect after use
+- revokeIdentity when deleting a driver
