@@ -13,6 +13,17 @@ The project is split into 3 folders
 
 ### Prerequisites
 
+**Python**
+
+``` bash
+sudo apt-get install python-minimal
+```
+
+**make and essentials**
+```bash
+sudo apt-get install build-essential
+```
+
 The project uses the next version of Hyperledger Composer so make sure the following npm packages are installed.
 
 Essential CLI tools:
