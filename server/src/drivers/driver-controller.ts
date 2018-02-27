@@ -126,6 +126,15 @@ export default class DriverController {
 
         await this.database.passportModel.create(passport);
 
+        // issue a new identity by composer-client
+        const identity = await composerConnection.bizNetworkConnection.issueIdentity(
+          composerConnection.composerModelFactory.getNamespaceForResource(ComposerTypes.Driver, payload.id),
+          payload.email
+        );
+
+        // import new Id card
+        await this.connectionManager.importNewIdCard(identity.userID, identity.userSecret);
+
         await composerConnection.disconnect();
 
         return reply(payload).code(201);
