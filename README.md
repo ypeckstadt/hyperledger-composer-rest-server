@@ -131,6 +131,6 @@ The following routes are available:
 
 All routes, except passport/token, require a JWT header `Authorization Bearer <token>`
 
-#### Todo
-- connection.disconnect after use
-- revokeIdentity when deleting a driver
+### Notes
+
+Obviously there is a lot of copy paste code involved in this. However it is very easy to create an abstract controller that has all the shared code and only overwrite the functions in the entity controllers when extra or custom business logic is needed.  For this demo project I decided to do everything verbose though to make it more clear.
