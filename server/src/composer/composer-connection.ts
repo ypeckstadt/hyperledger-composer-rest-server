@@ -80,4 +80,33 @@ export class ComposerConnection {
   disconnect(): Promise<void> {
     return this.bizNetworkConnection.disconnect();
   }
+
+  /**
+   * Get composer identity
+   * @param {string} identityName
+   * @returns {Promise<any>}
+   */
+  getIdentity(identityName: string): Promise<any> {
+    return this.bizNetworkConnection.getIdentityRegistry()
+      .then((identityRegistry) => identityRegistry.getAll())
+      .then((identities) => {
+        let id = null;
+        for (let i = 0; i < identities.length; i++) {
+          if (identityName === identities[i].name) {
+            id = identities[i];
+            break;
+          }
+        }
+        return id;
+      });
+  }
+
+  /**
+   * Revoke composer identity
+   * @param identity
+   * @returns {Promise<void>}
+   */
+  revokeIdentity(identity: any): Promise<void> {
+    return this.bizNetworkConnection.revokeIdentity(identity);
+  }
 }

@@ -203,11 +203,13 @@ export default class DriverController {
       return registry.exists(id)
         .then((exists) => {
           if (exists) {
-            // remove the entity from the registry and revoke the identity
-            return registry.remove(id)
-              .then(() => composerConnection.bizNetworkConnection.revokeIdentity(id))
-              .then(() => composerConnection.disconnect())
-              .then(() => reply({id}));
+            return registry.get(id).then((driver) => {
+              return composerConnection.getIdentity(driver.email)
+                .then((identity) => composerConnection.revokeIdentity(identity))
+                .then(() => registry.remove(id))
+                .then(() => composerConnection.disconnect())
+                .then(() => reply({id}));
+            });
           } else {
             return composerConnection.disconnect().then(() => reply(Boom.notFound()));
           }
