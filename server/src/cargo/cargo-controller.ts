@@ -43,21 +43,19 @@ export default class CargoController {
       const resolve = request.query["resolve"] === "true" ? true : false;
 
       try {
-        const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-        const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Cargo);
+        const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+        const registry = await composerConnection.getRegistry(ComposerTypes.Cargo);
 
         if (resolve) {
           // If we resolve the data the returned data is valid json data and can be send as such
           return registry.resolveAll()
-          .then((data) => {
-            reply(data);
-          });
+          .then((data) => composerConnection.disconnect().then(() => reply(data)));
         } else {
           // unresolved data is not valid json and cannot directly be returned through Hapi. We need to use the serializer
           return registry.getAll()
           .then((cargos) => {
-            let serialized = cargos.map((cargo) => composerConnectionForIdentity.serializeToJSON(cargo));
-            reply(serialized);
+            let serialized = cargos.map((cargo) => composerConnection.serializeToJSON(cargo));
+            return composerConnection.disconnect().then(() => reply(serialized));
           });
         }
       } catch (error) {
@@ -75,15 +73,17 @@ export default class CargoController {
     let payload: any = request.payload;
     const identity = request.auth.credentials.id;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
 
       // check if the entity has already been registered or not
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Cargo);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Cargo);
       const exists = await registry.exists(payload.id);
       if (exists) {
+        await composerConnection.disconnect();
         return reply(Boom.badRequest(`cargo already exists`));
       } else {
-        await registry.add(composerConnectionForIdentity.composerModelFactory.createCargo(payload));
+        await registry.add(composerConnection.composerModelFactory.createCargo(payload));
+        await composerConnection.disconnect();
         return reply(payload).code(201);
       }
     } catch (error) {
@@ -105,24 +105,25 @@ export default class CargoController {
     const resolve = request.query["resolve"] === "true" ? true : false;
 
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Cargo);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Cargo);
       return registry.exists(id)
         .then((exists) => {
           if (exists) {
             if (resolve) {
               registry.resolve(id)
                 .then((cargo) => {
-                  reply(cargo);
+                  return composerConnection.disconnect().then(() => reply(cargo));
                 });
             } else {
-              registry.get(id)
+              return registry.get(id)
                 .then((cargo) => {
-                  reply(composerConnectionForIdentity.serializeToJSON(cargo));
+                  const output = composerConnection.serializeToJSON(cargo);
+                  return composerConnection.disconnect().then(() => reply(output));
                 });
             }
           } else {
-            reply(Boom.notFound());
+            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
           }
         });
     } catch (error) {
@@ -140,16 +141,17 @@ export default class CargoController {
     let id = request.params["id"];
     const identity = request.auth.credentials.id;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Cargo);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Cargo);
       registry.exists(id)
         .then((exists) => {
           if (exists) {
             // remove the entity from the registry and revoke the identity
-            registry.remove(id)
+            return registry.remove(id)
+              .then(() => composerConnection.disconnect())
               .then(() => reply({id}));
           } else {
-            return reply(Boom.notFound());
+            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
           }
         });
     } catch (error) {
@@ -168,18 +170,21 @@ export default class CargoController {
     let id = request.params["id"];
     const payload: any = request.payload;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Cargo);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Cargo);
 
       const exists =  registry.exists(id);
       if (exists) {
         let composerEntityForUpdate = await registry.get(id);
-
-        composerEntityForUpdate = composerConnectionForIdentity.composerModelFactory.editCargo(composerEntityForUpdate, payload);
+        composerEntityForUpdate = composerConnection.composerModelFactory.editCargo(composerEntityForUpdate, payload);
         registry.update(composerEntityForUpdate).then(() => {
-          return reply(composerConnectionForIdentity.serializeToJSON(composerEntityForUpdate));
+          const output = composerConnection.serializeToJSON(composerEntityForUpdate);
+          return composerConnection.disconnect().then(() => {
+            return reply(output);
+          });
         });
       } else {
+        await  composerConnection.disconnect();
         return reply(Boom.notFound());
       }
     } catch (error) {

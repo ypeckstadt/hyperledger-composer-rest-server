@@ -43,21 +43,21 @@ export default class TruckController {
       const resolve = request.query["resolve"] === "true" ? true : false;
 
       try {
-        const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-        const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Truck);
+        const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+        const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
 
         if (resolve) {
           // If we resolve the data the returned data is valid json data and can be send as such
           return registry.resolveAll()
           .then((trucks) => {
-            reply(trucks);
+            return composerConnection.disconnect().then(() => reply(trucks));
           });
         } else {
           // unresolved data is not valid json and cannot directly be returned through Hapi. We need to use the serializer
           return registry.getAll()
           .then((trucks) => {
-            let serialized = trucks.map((truck) => composerConnectionForIdentity.serializeToJSON(truck));
-            reply(serialized);
+            let serialized = trucks.map((truck) => composerConnection.serializeToJSON(truck));
+            return composerConnection.disconnect().then(() => reply(serialized));
           });
         }
       } catch (error) {
@@ -76,15 +76,17 @@ export default class TruckController {
     let payload: any = request.payload;
     const identity = request.auth.credentials.id;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
 
       // check if the entity has already been registered or not
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Truck);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
       const exists = await registry.exists(payload.id);
       if (exists) {
+        await composerConnection.disconnect();
         return reply(Boom.badRequest(`truck already exists`));
       } else {
-        await registry.add(composerConnectionForIdentity.composerModelFactory.createTruck(payload));
+        await registry.add(composerConnection.composerModelFactory.createTruck(payload));
+        await composerConnection.disconnect();
         return reply(payload).code(201);
       }
     } catch (error) {
@@ -106,24 +108,25 @@ export default class TruckController {
     const resolve = request.query["resolve"] === "true" ? true : false;
 
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Truck);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
       return registry.exists(id)
         .then((exists) => {
           if (exists) {
             if (resolve) {
-              registry.resolve(id)
+              return registry.resolve(id)
                 .then((truck) => {
-                  reply(truck);
+                  return composerConnection.disconnect().then(() => reply(truck));
                 });
             } else {
-              registry.get(id)
+              return registry.get(id)
                 .then((truck) => {
-                  reply(composerConnectionForIdentity.serializeToJSON(truck));
+                  const output = composerConnection.serializeToJSON(truck);
+                  return composerConnection.disconnect().then(() => reply(output));
                 });
             }
           } else {
-            reply(Boom.notFound());
+            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
           }
         });
     } catch (error) {
@@ -141,16 +144,17 @@ export default class TruckController {
     let id = request.params["id"];
     const identity = request.auth.credentials.id;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Truck);
-      registry.exists(id)
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
+      return registry.exists(id)
         .then((exists) => {
           if (exists) {
             // remove the entity from the registry and revoke the identity
-            registry.remove(id)
+            return registry.remove(id)
+              .then(() => composerConnection.disconnect())
               .then(() => reply({id}));
           } else {
-            return reply(Boom.notFound());
+            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
           }
         });
     } catch (error) {
@@ -169,18 +173,22 @@ export default class TruckController {
     let id = request.params["id"];
     const payload: any = request.payload;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Truck);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
 
       const exists =  registry.exists(id);
       if (exists) {
         let composerEntityForUpdate = await registry.get(id);
 
-        composerEntityForUpdate = composerConnectionForIdentity.composerModelFactory.editTruck(composerEntityForUpdate, payload);
-        registry.update(composerEntityForUpdate).then(() => {
-          return reply(composerConnectionForIdentity.serializeToJSON(composerEntityForUpdate));
+        composerEntityForUpdate = composerConnection.composerModelFactory.editTruck(composerEntityForUpdate, payload);
+        return registry.update(composerEntityForUpdate).then(() => {
+          const output = composerConnection.serializeToJSON(composerEntityForUpdate);
+          return composerConnection.disconnect().then(() => {
+            return reply(output);
+          });
         });
       } else {
+        await  composerConnection.disconnect();
         return reply(Boom.notFound());
       }
     } catch (error) {
@@ -200,29 +208,28 @@ export default class TruckController {
     let id = request.params["id"];
     const payload: any = request.payload;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Truck);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
 
       const exists =  registry.exists(id);
       if (exists) {
-        const transactionResourceName = composerConnectionForIdentity.composerModelFactory.getNamespaceForResource(ComposerTypes.ChangeTruckDriver);
-        const resource = composerConnectionForIdentity.serializeFromJSONObject({
+        const transactionResourceName = composerConnection.composerModelFactory.getNamespaceForResource(ComposerTypes.ChangeTruckDriver);
+        const resource = composerConnection.serializeFromJSONObject({
           '$class': transactionResourceName,
           'truck': id,
           'driver': payload.driverId
         });
-        const transactionResult = await composerConnectionForIdentity.submitTransaction(resource);
-        return reply();
+        const transactionResult = await composerConnection.submitTransaction(resource);
+        await  composerConnection.disconnect();
+        return reply(transactionResult);
       } else {
+        await  composerConnection.disconnect();
         return reply(Boom.notFound());
       }
     } catch (error) {
       return reply(Boom.badImplementation(error));
     }
   }
-
-
-
 }
 
 

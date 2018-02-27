@@ -72,4 +72,12 @@ export class ComposerConnection {
   submitTransaction(resource: string) {
     return this.bizNetworkConnection.submitTransaction(resource);
   }
+
+  /**
+   * Disconnect business network connection
+   * @returns {Promise<void>}
+   */
+  disconnect(): Promise<void> {
+    return this.bizNetworkConnection.disconnect();
+  }
 }

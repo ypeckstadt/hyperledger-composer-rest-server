@@ -13,7 +13,7 @@ export class ComposerModelFactory {
   }
 
   /**
-   * Get the namespace for the specified asset or participant
+   * Get the namespace for the specified asset, participant or transaction
    * @param {ComposerTypes} type
    * @param {string} id
    * @returns {string}

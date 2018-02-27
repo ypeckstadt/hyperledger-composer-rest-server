@@ -43,21 +43,21 @@ export default class DriverController {
       const resolve = request.query["resolve"] === "true" ? true : false;
 
       try {
-        const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-        const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Driver);
+        const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+        const registry = await composerConnection.getRegistry(ComposerTypes.Driver);
 
         if (resolve) {
           // If we resolve the data the returned data is valid json data and can be send as such
           return registry.resolveAll()
           .then((data) => {
-            reply(data);
+            return composerConnection.disconnect().then(() => reply(data));
           });
         } else {
           // unresolved data is not valid json and cannot directly be returned through Hapi. We need to use the serializer
           return registry.getAll()
           .then((drivers) => {
-            let serialized = drivers.map((driver) => composerConnectionForIdentity.serializeToJSON(driver));
-            reply(serialized);
+            let serialized = drivers.map((driver) => composerConnection.serializeToJSON(driver));
+            return composerConnection.disconnect().then(() => reply(serialized));
           });
         }
       } catch (error) {
@@ -76,13 +76,11 @@ export default class DriverController {
     // Get credentials from token, the token is the driver email address
     const identity = request.auth.credentials.id;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Driver);
-
-      return composerConnectionForIdentity.query(ComposerModel.QUERY.SELECT_ALL_DRIVERS)
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      return composerConnection.query(ComposerModel.QUERY.SELECT_ALL_DRIVERS)
         .then((drivers) => {
-          let serialized = drivers.map((driver) => composerConnectionForIdentity.serializeToJSON(driver));
-          return reply(serialized);
+          let serialized = drivers.map((driver) => composerConnection.serializeToJSON(driver));
+          return composerConnection.disconnect().then(() => reply(serialized));
         });
     } catch (error) {
       reply(Boom.badImplementation(error));
@@ -100,15 +98,16 @@ export default class DriverController {
     let payload: any = request.payload;
     const identity = request.auth.credentials.id;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
 
       // check if the entity has already been registered or not
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Driver);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Driver);
       const exists = await registry.exists(payload.id);
       if (exists) {
+        await composerConnection.disconnect();
         return reply(Boom.badRequest(`driver already exists`));
       } else {
-        await registry.add(composerConnectionForIdentity.composerModelFactory.createDriver(payload));
+        await registry.add(composerConnection.composerModelFactory.createDriver(payload));
 
         // Create passport for the driver(user) so he or she can login with username/password
         // dev-only: remove if already exists
@@ -126,6 +125,8 @@ export default class DriverController {
         };
 
         await this.database.passportModel.create(passport);
+
+        await composerConnection.disconnect();
 
         return reply(payload).code(201);
       }
@@ -148,24 +149,25 @@ export default class DriverController {
     const resolve = request.query["resolve"] === "true" ? true : false;
 
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Driver);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Driver);
       return registry.exists(id)
         .then((exists) => {
           if (exists) {
             if (resolve) {
               registry.resolve(id)
                 .then((driver) => {
-                  reply(driver);
+                  return composerConnection.disconnect().then(() => reply(driver));
                 });
             } else {
               registry.get(id)
                 .then((driver) => {
-                  reply(composerConnectionForIdentity.serializeToJSON(driver));
+                  const output = composerConnection.serializeToJSON(driver);
+                  return composerConnection.disconnect().then(() => reply(output));
                 });
             }
           } else {
-            reply(Boom.notFound());
+            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
           }
         });
     } catch (error) {
@@ -175,6 +177,7 @@ export default class DriverController {
 
   /**
    * API route: Delete a driver
+   * When we delete a driver we also want to remove the passport and the composer identity
    * @param {Request} request
    * @param {ReplyNoContinue} reply
    * @returns {Promise<Response>}
@@ -183,16 +186,21 @@ export default class DriverController {
     let id = request.params["id"];
     const identity = request.auth.credentials.id;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Driver);
-      registry.exists(id)
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Driver);
+
+      await this.database.passportModel.remove({ email: id});
+
+      return registry.exists(id)
         .then((exists) => {
           if (exists) {
             // remove the entity from the registry and revoke the identity
-            registry.remove(id)
+            return registry.remove(id)
+              .then(() => composerConnection.bizNetworkConnection.revokeIdentity(id))
+              .then(() => composerConnection.disconnect())
               .then(() => reply({id}));
           } else {
-            return reply(Boom.notFound());
+            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
           }
         });
     } catch (error) {
@@ -211,18 +219,22 @@ export default class DriverController {
     let id = request.params["id"];
     const payload: any = request.payload;
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Driver);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Driver);
 
       const exists =  registry.exists(id);
       if (exists) {
         let composerEntityForUpdate = await registry.get(id);
 
-        composerEntityForUpdate = composerConnectionForIdentity.composerModelFactory.editDriver(composerEntityForUpdate, payload);
-        registry.update(composerEntityForUpdate).then(() => {
-          return reply(composerConnectionForIdentity.serializeToJSON(composerEntityForUpdate));
+        composerEntityForUpdate = composerConnection.composerModelFactory.editDriver(composerEntityForUpdate, payload);
+        return registry.update(composerEntityForUpdate).then(() => {
+          const output = composerConnection.serializeToJSON(composerEntityForUpdate);
+          return composerConnection.disconnect().then(() => {
+            return reply(output);
+          });
         });
       } else {
+        await  composerConnection.disconnect();
         return reply(Boom.notFound());
       }
     } catch (error) {
@@ -242,16 +254,16 @@ export default class DriverController {
     const identity = request.auth.credentials.id;
     let id = request.params["id"];
     try {
-      const composerConnectionForIdentity = await this.connectionManager.createBusinessNetworkConnection(identity);
-      const registry = await composerConnectionForIdentity.getRegistry(ComposerTypes.Driver);
+      const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
+      const registry = await composerConnection.getRegistry(ComposerTypes.Driver);
 
       // The query parameters for composer queries need to be converted to the resource namespace if filtering on resources
 
-      const queryParam = composerConnectionForIdentity.composerModelFactory.getNamespaceForResource(ComposerTypes.Truck, id);
-      return composerConnectionForIdentity.query(ComposerModel.QUERY.SELECT_ALL_TRUCKS_FOR_DRIVER, { driver: queryParam})
+      const queryParam = composerConnection.composerModelFactory.getNamespaceForResource(ComposerTypes.Truck, id);
+      return composerConnection.query(ComposerModel.QUERY.SELECT_ALL_TRUCKS_FOR_DRIVER, { driver: queryParam})
         .then((drivers) => {
-          let serialized = drivers.map((driver) => composerConnectionForIdentity.serializeToJSON(driver));
-          return reply(serialized);
+          let serialized = drivers.map((driver) => composerConnection.serializeToJSON(driver));
+          return composerConnection.disconnect().then(() => reply(serialized));
         });
     } catch (error) {
       reply(Boom.badImplementation(error));
