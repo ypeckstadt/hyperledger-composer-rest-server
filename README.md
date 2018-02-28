@@ -96,7 +96,7 @@ npm run buildstart
 
 The following routes are available:
 
-** passport**
+**passport**
 
 - POST /api/v1/passport/token:  get new token
 - POST /api/v1/passport/user:  get user passport
