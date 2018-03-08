@@ -10,7 +10,7 @@ import { LoggerInstance } from 'winston';
 export default class ComposerConnectionManager {
 
   static BUSINESS_NETWORK = 'cargo-network';
-  static CONNECTION_PROFILE = {
+ static CONNECTION_PROFILE = {
     "name": "hlfv1",
     "x-type": "hlfv1",
     "x-commitTimeout": 300,
@@ -51,18 +51,18 @@ export default class ComposerConnectionManager {
     },
     "orderers": {
       "orderer.example.com": {
-        "url": "grpc://${HOST}:7050"
+        "url": "grpc://localhost:7050"
       }
     },
     "peers": {
       "peer0.org1.example.com": {
-        "url": "grpc://${HOST}:7051",
-        "eventUrl": "grpc://${HOST}:7053"
+        "url": "grpc://localhost:7051",
+        "eventUrl": "grpc://localhost:7053"
       }
     },
-    "certificateAuthaorities": {
+    "certificateAuthorities": {
       "ca.org1.example.com": {
-        "url": "http://${HOST}:7054",
+        "url": "http://localhost:7054",
         "caName": "ca.org1.example.com"
       }
     }
