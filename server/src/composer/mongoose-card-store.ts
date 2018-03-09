@@ -2,6 +2,7 @@ import { IDatabase } from '../database/database';
 import { IComposerCard } from './composer-card';
 import { IdCard, BusinessNetworkCardStore } from 'composer-common';
 import { LoggerInstance } from 'winston';
+import { Json } from 'hapi';
 
 /**
  * Manages persistence of business network cards to a Mongo database
@@ -21,20 +22,20 @@ export default class MongooseCardStore extends (BusinessNetworkCardStore as { ne
    * @param cardName
    * @returns {Promise<any>}
    */
-  get(cardName) {
+  get(cardName): Promise<IdCard> {
     this.logger.info(`retrieving card ${cardName} ...`);
     return this.database.composerCardModel.findOne({ cardName: cardName }).lean(true)
       .then((composerCard: IComposerCard) => {
         if (composerCard) {
           this.logger.info(`card ${cardName} found`);
-          const cardData = Buffer.from(composerCard.base64, 'base64');
-          return IdCard.fromArchive(cardData);
+
+          return this.convertToIdCard(composerCard);
         } else {
           this.throwCardDoesNotExistError(cardName);
         }
       }).catch((err) => {
         this.throwCardDoesNotExistError(cardName);
-    });
+      });
   }
 
   /**
@@ -42,7 +43,7 @@ export default class MongooseCardStore extends (BusinessNetworkCardStore as { ne
    * @param cardName
    * @param card
    */
-  put(cardName, card) {
+  put(cardName: string, card: IdCard) {
     this.logger.info(`putting card ${cardName} ...`);
     return this.database.composerCardModel.find({ cardName})
       .then((composerCard) => {
@@ -53,7 +54,15 @@ export default class MongooseCardStore extends (BusinessNetworkCardStore as { ne
         }
       }).then(() => card.toArchive({ type: 'nodebuffer' }))
       .then((cardData) => {
-        const newComposerCard = { cardName, base64: cardData.toString('base64')};
+        const newComposerCard = {
+          cardName,
+          connectionProfile: JSON.stringify(card.getConnectionProfile()),
+          businessNetwork: card.getBusinessNetworkName(),
+          enrollmentSecret: card.getEnrollmentCredentials().secret,
+          version: card['metadata'].version,
+          roles: JSON.stringify(card.getRoles()),
+          userName: card.getUserName()
+        };
         return this.database.composerCardModel.create(newComposerCard);
       });
   }
@@ -65,19 +74,12 @@ export default class MongooseCardStore extends (BusinessNetworkCardStore as { ne
     this.logger.info(`getting all cards from store ...`);
     const result = new Map();
     this.database.composerCardModel.find().lean(true)
-      .then((composerCards: any[]) => {
-        return composerCards.reduce((promise, composerCard) => {
-          return promise.then(() => {
-            const cardData = Buffer.from(composerCard.base64, 'base64');
-            return IdCard.fromArchive(cardData)
-              .then((card) => {
-                result.set(composerCard.name, card);
-              });
-          });
-        }, Promise.resolve());
-      }).then(() => {
-       return result;
-    });
+      .then((composerCards: IComposerCard[]) => {
+        for (const composerCard of composerCards) {
+          result.set(composerCard.cardName, this.convertToIdCard(composerCard));
+        }
+        return result;
+      });
   }
 
   /**
@@ -90,7 +92,7 @@ export default class MongooseCardStore extends (BusinessNetworkCardStore as { ne
       .then((composerCard) => {
         return true;
       }).catch((err) => {
-        this.throwCardDoesNotExistError(cardName);
+      this.throwCardDoesNotExistError(cardName);
     });
   }
 
@@ -105,7 +107,7 @@ export default class MongooseCardStore extends (BusinessNetworkCardStore as { ne
       .then((composerCard) => {
         return composerCard !== null;
       }).catch((err) => {
-       return false;
+      return false;
     });
   }
 
@@ -114,8 +116,15 @@ export default class MongooseCardStore extends (BusinessNetworkCardStore as { ne
     error.statusCode = error.status = 404;
     throw error;
   }
+
+  private convertToIdCard(composerCard: IComposerCard): IdCard {
+    const metadata = {
+      version : composerCard.version,
+      userName : composerCard.userName,
+      businessNetwork : composerCard.businessNetwork,
+      enrollmentSecret : composerCard.enrollmentSecret,
+      roles: JSON.parse(composerCard.roles)
+    };
+    return new IdCard(metadata, JSON.parse(composerCard.connectionProfile));
+  }
 }
-
-
-
-
