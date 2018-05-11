@@ -16,10 +16,13 @@ The project is split into 3 folders
 
 The project uses Hyperledger Composer version 0.19.5
 
-Essential CLI tools:
-
 ``` bash
 npm install -g composer-cli
+```
+
+Composer-redis-wallet
+``` bash
+npm install -g composer-redis-wallet
 ```
 
 Of course a running docker service is required as well.
@@ -52,7 +55,15 @@ It will install Hyperledger Fabric and start up the network.
 
 The server project uses a mongo database so just run the following command to load up your mongo database from the mongodb folder.
 
-`docker-compose up -d` or run the `start-mongo-db.sh` fiel
+`docker-compose up -d` or run the `start-mongo-db.sh` file
+
+### Composer-redis-wallet
+
+In my 0.17.5 version I was storing the composer business network cards in the mongo database by using my own mongodb card store.  Since the Composer team released an easy to use redis version now, I decided to remove the mongo card store code and just use the redis one.
+
+All the required settings are already set and included in scripts.  Feel free to check out https://github.com/hyperledger/composer-tools/tree/master/packages/composer-wallet-redis to check which settings are required to get it up and running. 
+
+My initialize script already starts the redis docker container that gets used by composer-wallet-redis.
 
 ### Server
 
