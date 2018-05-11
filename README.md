@@ -1,7 +1,7 @@
 # hyperledger-composer-rest-server
 Hyperledger Composer implementation wtih custom REST server
 
-An example of how you could on about creating a custom REST API server that uses the npm Composer SDK packages to access and maintain your Hyperledger composer network.  
+An example of how you could go on about creating a custom REST API server that uses the npm Composer SDK packages to access and maintain your Hyperledger composer network.  
 
 
 
@@ -41,7 +41,23 @@ To keeps things simple this business network only contains a few types.
 - Address - concept
 - CargoType: enum
 
-I tried to include as much as available types as possible to cover as much SDK actions as possible.
+I tried to include multiple types to cover as much SDK actions as possible.  
+
+Currently I think the following actions are covered:
+* create a connection to the network
+* register an asset
+* register a participant
+* register an identity
+* revoke an identity
+* call a query
+* submit a transaction
+* import a card into the redis cardstore
+* get assets or participants resolve or unresolved
+* assset/participant exist check
+* remove assets/participants
+* update assets/particants
+* serialize output, use concepts, relationships , ...
+
 
 The idea is simple.   A driver drives a truck and can request to be the driver of it.  Cargo can be of many types and can be registered in the application and assigned to a Truck.
 
