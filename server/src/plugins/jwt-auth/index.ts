@@ -1,52 +1,53 @@
 import { IPlugin, IPluginOptions } from "../interfaces";
 import * as Hapi from "hapi";
-import { IPassport } from "../../passports/passport";
+import { IRequest } from '../../interfaces/request';
 
-export default (): IPlugin => {
-    return {
-        register: (server: Hapi.Server, options: IPluginOptions): Promise<void> => {
-            const database = options.database;
-            const serverConfig = options.serverConfigs;
+const register = async (server: Hapi.Server, options: IPluginOptions): Promise<void> => {
+  try {
+    const database = options.database;
+    const serverConfig = options.serverConfigs;
 
-            const validatePassport = (decoded, request, cb) => {
-                database.passportModel
-                  .find({ email: decoded.id})
-                  .lean(true)
-                    .then((user: IPassport) => {
-                        if (!user) {
-                            return cb(null, false);
-                        }
+    const validatePassport = async (decoded: any, request: IRequest, h: Hapi.ResponseToolkit) => {
+      const passport = await database.passportModel.find({ email: decoded.id}).lean(true);
+      if (!passport) {
+        return { isValid: false };
+      }
 
-                        return cb(null, true);
-                    });
-            };
-
-            return new Promise<void>((resolve) => {
-                server.register({
-                    register: require('hapi-auth-jwt2')
-                }, (error) => {
-                    if (error) {
-                        console.log(`Error registering jwt plugin: ${error}`);
-                    } else {
-                        server.auth.strategy('jwt', 'jwt', false,
-                            {
-                                key: serverConfig.jwt.secret,
-                                validateFunc: validatePassport,
-                                verifyOptions: { algorithms: [serverConfig.jwt.algorithm] }
-                            });
-                    }
-
-                    resolve();
-                });
-            });
-        },
-        info: () => {
-            return {
-                name: "JWT Authentication",
-                version: "1.0.0"
-            };
-        }
+      return { isValid: true };
     };
+
+    await server.register(require('hapi-auth-jwt2'));
+
+    return setAuthStrategy(server, {
+      config: serverConfig.jwt,
+      validate: validatePassport
+    });
+
+  } catch (err) {
+    console.log(`Error registering jwt plugin: ${err}`);
+  }
 };
 
+const setAuthStrategy = async (server, { config, validate }) => {
+  server.auth.strategy('jwt', 'jwt', {
+    key: config.secret,
+    validate,
+    verifyOptions: { algorithms: [config.algorithm] }
+  });
 
+  server.auth.default('jwt');
+
+  return;
+};
+
+export default (): IPlugin => {
+  return {
+    register,
+    info: () => {
+      return {
+        name: 'JWT Authentication',
+        version: '1.0.0'
+      };
+    }
+  };
+};

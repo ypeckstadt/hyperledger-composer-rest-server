@@ -1,7 +1,7 @@
 import { ComposerModel, ComposerTypes } from './composer-model';
 import { IDriver } from "../drivers/driver";
 import { ITruck } from "../trucks/truck";
-import {ICargo} from "../cargo/cargo";
+import { ICargo } from "../cargo/cargo";
 
 export class ComposerModelFactory {
 

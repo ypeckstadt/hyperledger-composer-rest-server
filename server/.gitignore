@@ -40,3 +40,5 @@ typings
 #Idea files
 .idea/
 
+package-lock.json
+

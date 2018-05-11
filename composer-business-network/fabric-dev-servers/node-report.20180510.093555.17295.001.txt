@@ -1,0 +1,207 @@
+================================================================================
+==== Node Report ===============================================================
+
+Event: exception, location: "OnUncaughtException"
+Filename: node-report.20180510.093555.17295.001.txt
+Dump event time:  2018/05/10 09:35:55
+Module load time: 2018/05/10 09:35:55
+Process ID: 17295
+Command line: node /home/yves/.nvm/versions/node/v8.11.1/bin/composer card import --file /tmp/PeerAdmin@hlfv1.card 
+
+Node.js version: v8.11.1
+(http_parser: 2.8.0, v8: 6.2.414.50, uv: 1.19.1, zlib: 1.2.11, ares: 1.10.1-DEV,
+ modules: 57, nghttp2: 1.25.0, openssl: 1.0.2o, icu: 60.1, unicode: 10.0,
+ cldr: 32.0, tz: 2017c)
+
+node-report version: 2.2.1 (built against Node.js v8.11.1, glibc 2.27, 64 bit)
+
+OS version: Linux 4.15.0-20-generic #21-Ubuntu SMP Tue Apr 24 06:16:15 UTC 2018
+(glibc: 2.27)
+
+Machine: indetail x86_64
+
+================================================================================
+==== JavaScript Stack Trace ====================================================
+
+RedisClient.emit (events.js:1:1)
+RedisClient.on_error (/home/yves/.nvm/versions/node/v8.11.1/lib/node_modules/composer-wallet-redis/node_modules/redis/index.js:1:1)
+Socket.<anonymous> (/home/yves/.nvm/versions/node/v8.11.1/lib/node_modules/composer-wallet-redis/node_modules/redis/index.js:1:1)
+emitOne (events.js:1:1)
+Socket.emit (events.js:1:1)
+emitErrorNT (internal/streams/destroy.js:1:1)
+_combinedTickCallback (internal/process/next_tick.js:1:1)
+process._tickCallback (internal/process/next_tick.js:1:1)
+
+================================================================================
+==== Native Stack Trace ========================================================
+
+ 0: [pc=0x7f40da1ae08b] nodereport::OnUncaughtException(v8::Isolate*) [/home/yves/.nvm/versions/node/v8.11.1/lib/node_modules/composer-cli/node_modules/node-report/api.node]
+ 1: [pc=0xf1c332] v8::internal::Isolate::Throw(v8::internal::Object*, v8::internal::MessageLocation*) [node]
+ 2: [pc=0x1094a5d] v8::internal::Runtime_Throw(int, v8::internal::Object**, v8::internal::Isolate*) [node]
+ 3: [pc=0xa70d99842fd] 
+
+================================================================================
+==== JavaScript Heap and Garbage Collector =====================================
+
+Heap space name: new_space
+    Memory size: 33,554,432 bytes, committed memory: 28,269,880 bytes
+    Capacity: 16,498,688 bytes, used: 11,815,992 bytes, available: 4,682,696 bytes
+Heap space name: old_space
+    Memory size: 20,246,528 bytes, committed memory: 19,916,512 bytes
+    Capacity: 19,412,616 bytes, used: 18,759,848 bytes, available: 652,768 bytes
+Heap space name: code_space
+    Memory size: 2,097,152 bytes, committed memory: 1,425,376 bytes
+    Capacity: 1,655,232 bytes, used: 1,347,616 bytes, available: 307,616 bytes
+Heap space name: map_space
+    Memory size: 1,593,344 bytes, committed memory: 1,368,104 bytes
+    Capacity: 1,333,520 bytes, used: 1,259,808 bytes, available: 73,712 bytes
+Heap space name: large_object_space
+    Memory size: 6,340,608 bytes, committed memory: 6,340,608 bytes
+    Capacity: 1,441,861,832 bytes, used: 6,238,920 bytes, available: 1,435,622,912 bytes
+
+Total heap memory size: 63,832,064 bytes
+Total heap committed memory: 57,320,480 bytes
+Total used heap memory: 39,422,184 bytes
+Total available heap memory: 1,441,339,704 bytes
+
+Heap memory limit: 1,501,560,832
+
+================================================================================
+==== Resource Usage ============================================================
+
+Process total resource usage:
+  User mode CPU: 0.709568 secs
+  Kernel mode CPU: 0.061701 secs
+  Average CPU Consumption : 77.1269%
+  Maximum resident set size: 90,787,840 bytes
+  Page faults: 0 (I/O required) 23301 (no I/O required)
+  Filesystem activity: 0 reads 16 writes
+
+Event loop thread resource usage:
+  User mode CPU: 0.637554 secs
+  Kernel mode CPU: 0.052127 secs
+  Average CPU Consumption : 68.9681%
+  Filesystem activity: 0 reads 16 writes
+
+================================================================================
+==== Node.js libuv Handle Summary ==============================================
+
+(Flags: R=Ref, A=Active)
+Flags  Type      Address             Details
+[-A]   async     0x0000000002cd5610  
+[--]   check     0x00007ffd83fda8a0  
+[R-]   idle      0x00007ffd83fda918  
+[--]   prepare   0x00007ffd83fda990  
+[--]   check     0x00007ffd83fdaa08  
+[-A]   async     0x00000000021846a0  
+[R-]   timer     0x0000000002d54190  repeat: 0, timeout expired: 2151954 ms ago
+[R-]   tty       0x0000000002d2d328  width: 263, height: 13, file descriptor: 9, write queue size: 0, writable
+[-A]   signal    0x0000000002d5e9b0  signum: 28 (SIGWINCH)
+[R-]   tty       0x0000000002d54488  width: 263, height: 13, file descriptor: 11, write queue size: 0, writable
+[-A]   async     0x00007f40da3b6ce0  
+[-A]   timer     0x0000000002d5c7a0  repeat: 0, timeout in: 7799 ms
+[--]   async     0x00007f40cc004500  
+[R-]   tcp       0x0000000002dbca68  , send buffer size: 0, recv buffer size: 0, write queue size: 0, readable, writable
+
+================================================================================
+==== System Information ========================================================
+
+Environment variables
+  CLUTTER_IM_MODULE=xim
+  NVM_DIR=/home/yves/.nvm
+  LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:
+  LC_MEASUREMENT=ja_JP.UTF-8
+  LESSCLOSE=/usr/bin/lesspipe %s %s
+  LC_PAPER=ja_JP.UTF-8
+  LC_MONETARY=ja_JP.UTF-8
+  XDG_MENU_PREFIX=gnome-
+  LANG=en_US.UTF-8
+  DISPLAY=:0
+  OLDPWD=/home/yves/dev/yves/bitbucket/hyperledger-composer-rest-server/composer-business-network
+  NODE_CONFIG={ "composer": { "wallet": { "type": "composer-wallet-redis", "desc": "Uses a local redis instance", "options": {} } } }
+  GNOME_SHELL_SESSION_MODE=ubuntu
+  NVM_CD_FLAGS=
+  USERNAME=yves
+  XDG_VTNR=2
+  GIO_LAUNCHED_DESKTOP_FILE_PID=28395
+  SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
+  MANDATORY_PATH=/usr/share/gconf/ubuntu.mandatory.path
+  LC_NAME=ja_JP.UTF-8
+  XDG_SESSION_ID=2
+  USER=yves
+  DESKTOP_SESSION=ubuntu
+  QT4_IM_MODULE=xim
+  GOPATH=/home/yves/go
+  TEXTDOMAINDIR=/usr/share/locale/
+  DEFAULTS_PATH=/usr/share/gconf/ubuntu.default.path
+  PWD=/home/yves/dev/yves/bitbucket/hyperledger-composer-rest-server/composer-business-network/fabric-dev-servers
+  HOME=/home/yves
+  TEXTDOMAIN=im-config
+  SSH_AGENT_PID=6988
+  QT_ACCESSIBILITY=1
+  XDG_SESSION_TYPE=x11
+  XDG_DATA_DIRS=/usr/share/ubuntu:/usr/local/share:/usr/share:/var/lib/snapd/desktop
+  XDG_SESSION_DESKTOP=ubuntu
+  LC_ADDRESS=ja_JP.UTF-8
+  GJS_DEBUG_OUTPUT=stderr
+  LC_NUMERIC=ja_JP.UTF-8
+  GTK_MODULES=gail:atk-bridge
+  FABRIC_VERSION=hlfv11
+  WINDOWPATH=2
+  SHELL=/bin/bash
+  TERM=xterm-256color
+  QT_IM_MODULE=ibus
+  XMODIFIERS=@im=ibus
+  IM_CONFIG_PHASE=2
+  NVM_BIN=/home/yves/.nvm/versions/node/v8.11.1/bin
+  XDG_CURRENT_DESKTOP=ubuntu:GNOME
+  GPG_AGENT_INFO=/run/user/1000/gnupg/S.gpg-agent:0:1
+  GIO_LAUNCHED_DESKTOP_FILE=/home/yves/.local/share/applications/jetbrains-webstorm.desktop
+  SHLVL=4
+  XDG_SEAT=seat0
+  LC_TELEPHONE=ja_JP.UTF-8
+  GDMSESSION=ubuntu
+  GNOME_DESKTOP_SESSION_ID=this-is-deprecated
+  LOGNAME=yves
+  DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+  XDG_RUNTIME_DIR=/run/user/1000
+  XAUTHORITY=/run/user/1000/gdm/Xauthority
+  XDG_CONFIG_DIRS=/etc/xdg/xdg-ubuntu:/etc/xdg
+  PATH=/home/yves/.local/share/umake/bin:/home/yves/.nvm/versions/node/v8.11.1/bin:/home/yves/.local/share/umake/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/usr/local/go/bin:/usr/local/go/bin
+  LC_IDENTIFICATION=ja_JP.UTF-8
+  FABRIC_START_TIMEOUT=15
+  GJS_DEBUG_TOPICS=JS ERROR;JS LOG
+  SESSION_MANAGER=local/indetail:@/tmp/.ICE-unix/6615,unix/indetail:/tmp/.ICE-unix/6615
+  LESSOPEN=| /usr/bin/lesspipe %s
+  GTK_IM_MODULE=ibus
+  LC_TIME=ja_JP.UTF-8
+  BASH_FUNC_generate_command_executed_sequence%%=() {  printf '\e\7'
+}
+  _=/home/yves/.nvm/versions/node/v8.11.1/bin/composer
+  SUPPRESS_NO_CONFIG_WARNING=y
+
+Resource limits                        soft limit      hard limit
+  core file size (blocks)                       0       unlimited
+  data seg size (kbytes)                unlimited       unlimited
+  file size (blocks)                    unlimited       unlimited
+  max locked memory (bytes)              16777216        16777216
+  max memory size (kbytes)              unlimited       unlimited
+  open files                              1048576         1048576
+  stack size (bytes)                      8388608       unlimited
+  cpu time (seconds)                    unlimited       unlimited
+  max user processes                        63396           63396
+  virtual memory (kbytes)               unlimited       unlimited
+
+Loaded libraries
+  linux-vdso.so.1
+  /lib/x86_64-linux-gnu/libdl.so.2
+  /lib/x86_64-linux-gnu/librt.so.1
+  /usr/lib/x86_64-linux-gnu/libstdc++.so.6
+  /lib/x86_64-linux-gnu/libm.so.6
+  /lib/x86_64-linux-gnu/libgcc_s.so.1
+  /lib/x86_64-linux-gnu/libpthread.so.0
+  /lib/x86_64-linux-gnu/libc.so.6
+  /lib64/ld-linux-x86-64.so.2
+  /home/yves/.nvm/versions/node/v8.11.1/lib/node_modules/composer-cli/node_modules/node-report/api.node
+
+================================================================================

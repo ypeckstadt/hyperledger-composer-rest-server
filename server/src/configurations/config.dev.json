@@ -1,6 +1,6 @@
 {
     "database": {
-        "connectionString": "mongodb://localhost:27017/cargo"
+        "connectionString": "mongodb://localhost:27017/cargo-dev"
     },
     "server": {
         "port": 5000,
@@ -8,18 +8,80 @@
           "secret": "--your secret--",
           "expiration": "30 days",
           "algorithm": "HS256",
-          "issuer": "Cargo network",
-          "audience": "www.cargo-network.com"
+          "issuer": "Cargo server",
+          "audience": "www.cargo.co.jp"
         },
         "routePrefix": "/api/v1",
+        "enableDefaultPasswordForTesting": true,
+        "defaultPasswordForTesting": "cargo",
         "plugins": [
             "logger",
             "jwt-auth",
             "swagger"
+        ],
+        "accessList": [
+          "127.0.0.1"
         ]
     },
     "hyperledger": {
-      "adminBusinessNetworkCardName" : "admin@cargo-network",
-      "adminBusinessNetworkCardArchiveFilePath" : "/tmp/composer/networkadmin.card"
+        "adminBusinessNetworkCardName" : "admin@cargo-network",
+        "networkName": "cargo-network"
+    },
+    "composer-connection-profile": {
+        "name": "hlfv1",
+        "x-type": "hlfv1",
+        "x-commitTimeout": 300,
+        "version": "1.0.0",
+        "client": {
+            "organization": "Org1",
+            "connection": {
+                "timeout": {
+                    "peer": {
+                        "endorser": "300",
+                        "eventHub": "300",
+                        "eventReg": "300"
+                    },
+                    "orderer": "300"
+                }
+            }
+        },
+        "channels": {
+            "composerchannel": {
+                "orderers": [
+                    "orderer.example.com"
+                ],
+                "peers": {
+                    "peer0.org1.example.com": {}
+                }
+            }
+        },
+        "organizations": {
+            "Org1": {
+                "mspid": "Org1MSP",
+                "peers": [
+                    "peer0.org1.example.com"
+                ],
+                "certificateAuthorities": [
+                    "ca.org1.example.com"
+                ]
+            }
+        },
+        "orderers": {
+            "orderer.example.com": {
+                "url": "grpc://localhost:7050"
+            }
+        },
+        "peers": {
+            "peer0.org1.example.com": {
+                "url": "grpc://localhost:7051",
+                "eventUrl": "grpc://localhost:7053"
+            }
+        },
+        "certificateAuthorities": {
+            "ca.org1.example.com": {
+                "url": "http://localhost:7054",
+                "caName": "ca.org1.example.com"
+            }
+        }
     }
 }

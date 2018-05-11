@@ -20,7 +20,7 @@ gulp.task('clean', function () {
  */
 gulp.task('tslint', () => {
   return gulp.src('src/**/*.ts')
-    .pipe(tslint( {
+    .pipe(tslint( { 
       formatter: 'prose'
     }))
     .pipe(tslint.report());
@@ -56,7 +56,7 @@ gulp.task('watch', shell.task([
  */
 gulp.task('configs', (cb) => {
   return gulp.src("src/configurations/*.json")
-    .pipe(gulp.dest('./build/configurations'));
+    .pipe(gulp.dest('./build/src/configurations'));
 });
 
 /**

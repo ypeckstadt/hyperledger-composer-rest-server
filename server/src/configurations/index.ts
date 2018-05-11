@@ -1,5 +1,5 @@
-import * as nconf from "nconf";
-import * as path from "path";
+import * as nconf from 'nconf';
+import * as path from 'path';
 
 //Read Configurations
 const configs = new nconf.Provider({
@@ -7,7 +7,7 @@ const configs = new nconf.Provider({
   argv: true,
   store: {
     type: 'file',
-    file: path.join(__dirname, `./config.${process.env.NODE_ENV || "dev"}.json`)
+    file: path.join(__dirname, `./config.${process.env.NODE_ENV || 'dev'}.json`)
   }
 });
 
@@ -34,18 +34,22 @@ export interface IDataConfiguration {
 }
 
 export interface IHyperledgerConfiguration {
-  adminBusinessNetworkCardName: string;
-  adminBusinessNetworkCardArchiveFilePath: string;
+    adminBusinessNetworkCardName: string;
+    networkName: string;
 }
 
 export function getDatabaseConfig(): IDataConfiguration {
-  return configs.get("database");
+    return configs.get('database');
 }
 
 export function getServerConfigs(): IServerConfigurations {
-    return configs.get("server");
+    return configs.get('server');
 }
 
 export function getHyperledgerConfig(): IHyperledgerConfiguration {
-  return configs.get("hyperledger");
+  return configs.get('hyperledger');
+}
+
+export function getComposerConnectionProfileConfig(): object {
+  return configs.get('composer-connection-profile');
 }

@@ -6,6 +6,7 @@ import * as Boom from 'boom';
 import { ComposerConnection } from '../composer/composer-connection';
 import { ComposerTypes } from '../composer/composer-model';
 import ComposerConnectionManager from '../composer/composer-connection-manager';
+import { IRequest } from '../interfaces/request';
 
 export default class TruckController {
 
@@ -26,18 +27,18 @@ export default class TruckController {
     ) {
     }
 
-    /**
-     * API route: Get list
-     * query param: resolve
-     * if set to true the composer data is resolved
-     * if set to false or not provided the data is not resolved
-     * The difference between resolved and not resolved is that linked resources,foreign keys, will be completed resolved
-     * and converted to an object
-     * @param {Request} request
-     * @param {ReplyNoContinue} reply
-     * @returns {Promise<void>}
-     */
-    async getList(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  /**
+   * API route: Get list
+   * query param: resolve
+   * if set to true the composer data is resolved
+   * if set to false or not provided the data is not resolved
+   * The difference between resolved and not resolved is that linked resources,foreign keys, will be completed resolved
+   * and converted to an object
+   * @param {IRequest} request
+   * @param {ResponseToolkit} h
+   * @returns {Promise<any>}
+   */
+    async getList(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
       // Get credentials from token, the token is the driver email address
       const identity = request.auth.credentials.id;
       const resolve = request.query["resolve"] === "true" ? true : false;
@@ -48,31 +49,29 @@ export default class TruckController {
 
         if (resolve) {
           // If we resolve the data the returned data is valid json data and can be send as such
-          return registry.resolveAll()
-          .then((trucks) => {
-            return composerConnection.disconnect().then(() => reply(trucks));
-          });
+          const trucks = await registry.resolveAll();
+          await composerConnection.disconnect();
+          return trucks;
         } else {
           // unresolved data is not valid json and cannot directly be returned through Hapi. We need to use the serializer
-          return registry.getAll()
-          .then((trucks) => {
-            let serialized = trucks.map((truck) => composerConnection.serializeToJSON(truck));
-            return composerConnection.disconnect().then(() => reply(serialized));
-          });
+          const trucks = await registry.getAll();
+          let serialized = trucks.map((truck) => composerConnection.serializeToJSON(truck));
+          await composerConnection.disconnect();
+          return serialized;
         }
       } catch (error) {
-        reply(Boom.badImplementation(error));
+        return Boom.badImplementation(error);
       }
     }
 
 
   /**
    * API route: create a new truck
-   * @param {Request} request
-   * @param {ReplyNoContinue} reply
+   * @param {IRequest} request
+   * @param {Hapi.ResponseToolkit} h
    * @returns {Promise<Response>}
    */
-  async create(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  async create(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
     let payload: any = request.payload;
     const identity = request.auth.credentials.id;
     try {
@@ -83,14 +82,14 @@ export default class TruckController {
       const exists = await registry.exists(payload.id);
       if (exists) {
         await composerConnection.disconnect();
-        return reply(Boom.badRequest(`truck already exists`));
+        return Boom.badRequest(`truck already exists`);
       } else {
         await registry.add(composerConnection.composerModelFactory.createTruck(payload));
         await composerConnection.disconnect();
-        return reply(payload).code(201);
+        return h.response(payload).code(201);
       }
     } catch (error) {
-      return reply(Boom.badImplementation(error));
+      return Boom.badImplementation(error);
     }
   }
 
@@ -98,11 +97,11 @@ export default class TruckController {
    * API route: Get truck by Id
    * query param: resolve
    * if set to true the composer data is resolved
-   * @param {Request} request
-   * @param {ReplyNoContinue} reply
+   * @param {IRequest} request
+   * @param {Hapi.ResponseToolkit} h
    * @returns {Promise<void>}
    */
-  async getById(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  async getById(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
     const identity = request.auth.credentials.id;
     const id = request.params["id"];
     const resolve = request.query["resolve"] === "true" ? true : false;
@@ -110,65 +109,61 @@ export default class TruckController {
     try {
       const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
       const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
-      return registry.exists(id)
-        .then((exists) => {
-          if (exists) {
-            if (resolve) {
-              return registry.resolve(id)
-                .then((truck) => {
-                  return composerConnection.disconnect().then(() => reply(truck));
-                });
-            } else {
-              return registry.get(id)
-                .then((truck) => {
-                  const output = composerConnection.serializeToJSON(truck);
-                  return composerConnection.disconnect().then(() => reply(output));
-                });
-            }
-          } else {
-            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
-          }
-        });
+      const exists = await registry.exists(id);
+      if (exists) {
+        if (resolve) {
+          const truck = await registry.resolve(id);
+          await composerConnection.disconnect();
+          return truck;
+        } else {
+          const truck = await registry.get(id);
+          const output = composerConnection.serializeToJSON(truck);
+          await composerConnection.disconnect();
+          return output;
+        }
+      } else {
+        await composerConnection.disconnect();
+        return Boom.notFound();
+      }
     } catch (error) {
-      reply(Boom.badImplementation(error));
+      return Boom.badImplementation(error);
     }
   }
 
   /**
    * API route: Delete a truck
-   * @param {Request} request
-   * @param {ReplyNoContinue} reply
+   * @param {IRequest} request
+   * @param {Hapi.ResponseToolkit} h
    * @returns {Promise<Response>}
    */
-  async delete(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  async delete(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
     let id = request.params["id"];
     const identity = request.auth.credentials.id;
     try {
       const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
       const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
-      return registry.exists(id)
-        .then((exists) => {
-          if (exists) {
-            // remove the entity from the registry and revoke the identity
-            return registry.remove(id)
-              .then(() => composerConnection.disconnect())
-              .then(() => reply({id}));
-          } else {
-            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
-          }
-        });
+      const exists = await registry.exists(id);
+      if (exists) {
+        // remove the entity from the registry and revoke the identity
+        await registry.remove(id);
+        await composerConnection.disconnect();
+        return {id};
+      } else {
+        await composerConnection.disconnect();
+        return Boom.notFound();
+      }
     } catch (error) {
-      return reply(Boom.badImplementation(error));
+      return Boom.badImplementation(error);
     }
   }
 
   /**
    * API route: Update a truck
-   * @param {Request} request
-   * @param {ReplyNoContinue} reply
+   * @param {IRequest} request
+   * @param {Hapi.ResponseToolkit} h
    * @returns {Promise<Response>}
    */
-  async update(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  async update(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
     const identity = request.auth.credentials.id;
     let id = request.params["id"];
     const payload: any = request.payload;
@@ -176,34 +171,32 @@ export default class TruckController {
       const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
       const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
 
-      const exists =  registry.exists(id);
+      const exists =  await registry.exists(id);
       if (exists) {
         let composerEntityForUpdate = await registry.get(id);
 
         composerEntityForUpdate = composerConnection.composerModelFactory.editTruck(composerEntityForUpdate, payload);
-        return registry.update(composerEntityForUpdate).then(() => {
-          const output = composerConnection.serializeToJSON(composerEntityForUpdate);
-          return composerConnection.disconnect().then(() => {
-            return reply(output);
-          });
-        });
+        await registry.update(composerEntityForUpdate);
+        const output = composerConnection.serializeToJSON(composerEntityForUpdate);
+        await composerConnection.disconnect();
+        return output;
       } else {
         await  composerConnection.disconnect();
-        return reply(Boom.notFound());
+        return Boom.notFound();
       }
     } catch (error) {
-      return reply(Boom.badImplementation(error));
+      return Boom.badImplementation(error);
     }
   }
 
 
   /**
    * API route: Update the truck driver with transaction
-   * @param {Request} request
-   * @param {ReplyNoContinue} reply
+   * @param {IRequest} request
+   * @param {Hapi.ResponseToolkit} h
    * @returns {Promise<Response>}
    */
-  async changeTruckDriverWithTransaction(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  async changeTruckDriverWithTransaction(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
     const identity = request.auth.credentials.id;
     let id = request.params["id"];
     const payload: any = request.payload;
@@ -211,7 +204,7 @@ export default class TruckController {
       const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
       const registry = await composerConnection.getRegistry(ComposerTypes.Truck);
 
-      const exists =  registry.exists(id);
+      const exists =  await registry.exists(id);
       if (exists) {
         const transactionResourceName = composerConnection.composerModelFactory.getNamespaceForResource(ComposerTypes.ChangeTruckDriver);
         const resource = composerConnection.serializeFromJSONObject({
@@ -219,15 +212,15 @@ export default class TruckController {
           'truck': id,
           'driver': payload.driverId
         });
-        const transactionResult = await composerConnection.submitTransaction(resource);
-        await  composerConnection.disconnect();
-        return reply(transactionResult);
+        await composerConnection.submitTransaction(resource);
+        await composerConnection.disconnect();
+        return h.response().code(200);
       } else {
         await  composerConnection.disconnect();
-        return reply(Boom.notFound());
+        return Boom.notFound();
       }
     } catch (error) {
-      return reply(Boom.badImplementation(error));
+      return Boom.badImplementation(error);
     }
   }
 }

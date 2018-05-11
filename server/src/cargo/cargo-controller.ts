@@ -6,6 +6,7 @@ import * as Boom from 'boom';
 import { ComposerConnection } from '../composer/composer-connection';
 import { ComposerTypes } from '../composer/composer-model';
 import ComposerConnectionManager from '../composer/composer-connection-manager';
+import { IRequest } from '../interfaces/request';
 
 export default class CargoController {
 
@@ -26,18 +27,18 @@ export default class CargoController {
     ) {
     }
 
-    /**
-     * API route: Get list
-     * query param: resolve
-     * if set to true the composer data is resolved
-     * if set to false or not provided the data is not resolved
-     * The difference between resolved and not resolved is that linked resources,foreign keys, will be completed resolved
-     * and converted to an object
-     * @param {Request} request
-     * @param {ReplyNoContinue} reply
-     * @returns {Promise<void>}
-     */
-    async getList(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  /**
+   * API route: Get list
+   * query param: resolve
+   * if set to true the composer data is resolved
+   * if set to false or not provided the data is not resolved
+   * The difference between resolved and not resolved is that linked resources,foreign keys, will be completed resolved
+   * and converted to an object
+   * @param {IRequest} request
+   * @param {ResponseToolkit} h
+   * @returns {Promise<any>}
+   */
+    async getList(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
       // Get credentials from token, the token is the driver email address
       const identity = request.auth.credentials.id;
       const resolve = request.query["resolve"] === "true" ? true : false;
@@ -48,28 +49,28 @@ export default class CargoController {
 
         if (resolve) {
           // If we resolve the data the returned data is valid json data and can be send as such
-          return registry.resolveAll()
-          .then((data) => composerConnection.disconnect().then(() => reply(data)));
+          const data = await registry.resolveAll();
+          await composerConnection.disconnect();
+          return data;
         } else {
           // unresolved data is not valid json and cannot directly be returned through Hapi. We need to use the serializer
-          return registry.getAll()
-          .then((cargos) => {
-            let serialized = cargos.map((cargo) => composerConnection.serializeToJSON(cargo));
-            return composerConnection.disconnect().then(() => reply(serialized));
-          });
+          const cargos = await registry.getAll();
+          let serialized = cargos.map((cargo) => composerConnection.serializeToJSON(cargo));
+          await composerConnection.disconnect();
+          return serialized;
         }
       } catch (error) {
-        reply(Boom.badImplementation(error));
+        return Boom.badImplementation(error);
       }
     }
 
   /**
    * API route: create a new cargo
-   * @param {Request} request
-   * @param {ReplyNoContinue} reply
-   * @returns {Promise<Response>}
+   * @param {IRequest} request
+   * @param {ResponseToolkit} h
+   * @returns {Promise<any>}
    */
-  async create(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  async create(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
     let payload: any = request.payload;
     const identity = request.auth.credentials.id;
     try {
@@ -80,14 +81,14 @@ export default class CargoController {
       const exists = await registry.exists(payload.id);
       if (exists) {
         await composerConnection.disconnect();
-        return reply(Boom.badRequest(`cargo already exists`));
+        return Boom.badRequest(`cargo already exists`);
       } else {
         await registry.add(composerConnection.composerModelFactory.createCargo(payload));
         await composerConnection.disconnect();
-        return reply(payload).code(201);
+        return h.response(payload).code(201);
       }
     } catch (error) {
-      return reply(Boom.badImplementation(error));
+      return Boom.badImplementation(error);
     }
   }
 
@@ -99,7 +100,7 @@ export default class CargoController {
    * @param {ReplyNoContinue} reply
    * @returns {Promise<void>}
    */
-  async getById(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  async getById(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
     const identity = request.auth.credentials.id;
     const id = request.params["id"];
     const resolve = request.query["resolve"] === "true" ? true : false;
@@ -107,55 +108,51 @@ export default class CargoController {
     try {
       const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
       const registry = await composerConnection.getRegistry(ComposerTypes.Cargo);
-      return registry.exists(id)
-        .then((exists) => {
-          if (exists) {
-            if (resolve) {
-              registry.resolve(id)
-                .then((cargo) => {
-                  return composerConnection.disconnect().then(() => reply(cargo));
-                });
-            } else {
-              return registry.get(id)
-                .then((cargo) => {
-                  const output = composerConnection.serializeToJSON(cargo);
-                  return composerConnection.disconnect().then(() => reply(output));
-                });
-            }
-          } else {
-            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
-          }
-        });
+      const exists = await registry.exists(id);
+      if (exists) {
+        let cargo;
+        if (resolve) {
+          cargo = await registry.resolve(id);
+          await composerConnection.disconnect();
+          return cargo;
+        } else {
+          cargo = await registry.get(id);
+          const output = composerConnection.serializeToJSON(cargo);
+          await composerConnection.disconnect();
+          return output;
+        }
+      } else {
+        await  composerConnection.disconnect();
+        return Boom.notFound();
+      }
     } catch (error) {
-      reply(Boom.badImplementation(error));
+      return Boom.badImplementation(error);
     }
   }
 
   /**
    * API route: Delete a cargo
-   * @param {Request} request
-   * @param {ReplyNoContinue} reply
-   * @returns {Promise<Response>}
+   * @param {IRequest} request
+   * @param {ResponseToolkit} h
+   * @returns {Promise<any>}
    */
-  async delete(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  async delete(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
     let id = request.params["id"];
     const identity = request.auth.credentials.id;
     try {
       const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
       const registry = await composerConnection.getRegistry(ComposerTypes.Cargo);
-      registry.exists(id)
-        .then((exists) => {
-          if (exists) {
-            // remove the entity from the registry and revoke the identity
-            return registry.remove(id)
-              .then(() => composerConnection.disconnect())
-              .then(() => reply({id}));
-          } else {
-            return composerConnection.disconnect().then(() => reply(Boom.notFound()));
-          }
-        });
+      const exists = await registry.exists(id);
+      if (exists) {
+        await registry.remove(id);
+        await composerConnection.disconnect();
+        return {id};
+      } else {
+        await composerConnection.disconnect();
+        return Boom.notFound();
+      }
     } catch (error) {
-      return reply(Boom.badImplementation(error));
+      return Boom.badImplementation(error);
     }
   }
 
@@ -165,7 +162,7 @@ export default class CargoController {
    * @param {ReplyNoContinue} reply
    * @returns {Promise<Response>}
    */
-  async update(request: Hapi.Request, reply: Hapi.ReplyNoContinue): Promise<Hapi.Response> {
+  async update(request: IRequest, h: Hapi.ResponseToolkit): Promise<any> {
     const identity = request.auth.credentials.id;
     let id = request.params["id"];
     const payload: any = request.payload;
@@ -173,22 +170,20 @@ export default class CargoController {
       const composerConnection = await this.connectionManager.createBusinessNetworkConnection(identity);
       const registry = await composerConnection.getRegistry(ComposerTypes.Cargo);
 
-      const exists =  registry.exists(id);
+      const exists =  await registry.exists(id);
       if (exists) {
         let composerEntityForUpdate = await registry.get(id);
         composerEntityForUpdate = composerConnection.composerModelFactory.editCargo(composerEntityForUpdate, payload);
-        registry.update(composerEntityForUpdate).then(() => {
-          const output = composerConnection.serializeToJSON(composerEntityForUpdate);
-          return composerConnection.disconnect().then(() => {
-            return reply(output);
-          });
-        });
+        await registry.update(composerEntityForUpdate);
+        const output = composerConnection.serializeToJSON(composerEntityForUpdate);
+        await composerConnection.disconnect();
+        return output;
       } else {
         await  composerConnection.disconnect();
-        return reply(Boom.notFound());
+        return Boom.notFound();
       }
     } catch (error) {
-      return reply(Boom.badImplementation(error));
+      return Boom.badImplementation(error);
     }
   }
 }

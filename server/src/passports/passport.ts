@@ -2,6 +2,7 @@ import * as Mongoose from "mongoose";
 import * as Bcrypt from "bcryptjs";
 
 export interface IPassport extends Mongoose.Document {
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -14,6 +15,7 @@ export interface IPassport extends Mongoose.Document {
 
 export const PassportSchema = new Mongoose.Schema(
   {
+    id: {type: String, unique: true, required: true},
     email: {type: String, unique: true, required: true},
     firstName: {type: String, unique: false, required: true},
     lastName: {type: String, unique: false, required: true},

@@ -45,12 +45,12 @@ export class ComposerConnection {
     switch (composerType) {
       case ComposerTypes.Driver:
         return this.bizNetworkConnection.getParticipantRegistry(`${ComposerModel.NAMESPACE}.${ComposerModel.PARTICIPANT.DRIVER}`);
-      case ComposerTypes.Truck:
-        return this.bizNetworkConnection.getAssetRegistry(`${ComposerModel.NAMESPACE}.${ComposerModel.ASSET.TRUCK}`);
       case ComposerTypes.Cargo:
         return this.bizNetworkConnection.getAssetRegistry(`${ComposerModel.NAMESPACE}.${ComposerModel.ASSET.CARGO}`);
+      case ComposerTypes.Truck:
+        return this.bizNetworkConnection.getAssetRegistry(`${ComposerModel.NAMESPACE}.${ComposerModel.ASSET.TRUCK}`);
       default:
-        throw new Error(`composer connection getRegistery has not been defined yet`);
+        throw new Error(`composer connection getRegistry has not been defined yet for type ${ComposerTypes[composerType]}`);
     }
   }
 
@@ -60,7 +60,7 @@ export class ComposerConnection {
    * @param params
    * @returns {any}
    */
-  query(name: string, params: any = {}) {
+  query(name: string, params: any = null) {
     return this.bizNetworkConnection.query(name, params);
   }
 
@@ -82,6 +82,15 @@ export class ComposerConnection {
   }
 
   /**
+   * Revoke composer identity
+   * @param identity
+   * @returns {Promise<void>}
+   */
+  revokeIdentity(identity: any): Promise<void> {
+    return this.bizNetworkConnection.revokeIdentity(identity);
+  }
+
+  /**
    * Get composer identity
    * @param {string} identityName
    * @returns {Promise<any>}
@@ -99,14 +108,5 @@ export class ComposerConnection {
         }
         return id;
       });
-  }
-
-  /**
-   * Revoke composer identity
-   * @param identity
-   * @returns {Promise<void>}
-   */
-  revokeIdentity(identity: any): Promise<void> {
-    return this.bizNetworkConnection.revokeIdentity(identity);
   }
 }
