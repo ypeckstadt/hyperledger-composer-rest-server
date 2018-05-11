@@ -13,29 +13,13 @@ The project is split into 3 folders
 
 ### Prerequisites
 
-**Python**
 
-``` bash
-sudo apt-get install python-minimal
-```
-
-**make and essentials**
-```bash
-sudo apt-get install build-essential
-```
-
-The project uses the next version of Hyperledger Composer so make sure the following npm packages are installed.
+The project uses Hyperledger Composer version 0.19.5
 
 Essential CLI tools:
 
 ``` bash
-npm install -g composer-cli@next
-```
-
-Useful utility for generating application assets:
-
-``` bash
-npm install -g generator-hyperledger-composer@next
+npm install -g composer-cli
 ```
 
 Of course a running docker service is required as well.
@@ -68,7 +52,7 @@ It will install Hyperledger Fabric and start up the network.
 
 The server project uses a mongo database so just run the following command to load up your mongo database from the mongodb folder.
 
-`docker-compose up -d`
+`docker-compose up -d` or run the `start-mongo-db.sh` fiel
 
 ### Server
 
@@ -85,10 +69,18 @@ Once created and connected I can use this connection to access the registries an
 To start the server first update the packages.
 
 ``` bash
-npm install
+npm install or yarn install
 ```
 
-Then build and start the project with the following command
+I included a seperate file that can be run to add a demo test driver which you can use to authenticate with. To run this script run
+
+``` bash
+npm run add-test-driver
+```
+
+This small node js file will connect to the composer network, add a driver participant, add a passport for the driver in the mongo datbase and generate a blockchain identity for this driver.
+
+Then build and start the project with the following command which whill start the server
 
 ``` bash
 npm run buildstart
